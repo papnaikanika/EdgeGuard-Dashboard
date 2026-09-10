@@ -2,7 +2,7 @@
 // EdgeGuard-μGrid Dashboard
 // ==========================================
 
-const API_URL = window.location.origin;
+const API_URL = "https://westminster-larger-affordable-cal.trycloudflare.com";
 
 const AUTH_TOKEN =
     sessionStorage.getItem("edgeguard_token");
