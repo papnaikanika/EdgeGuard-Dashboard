@@ -28,7 +28,7 @@ loginForm.addEventListener(
 
             const response =
                 await fetch(
-                    "/api/login",
+                    "https://westminster-larger-affordable-cal.trycloudflare.com/api/login",
                     {
                         method: "POST",
 
