@@ -28,7 +28,7 @@ loginForm.addEventListener(
 
             const response =
                 await fetch(
-                    "https://tide-vocals-words-jun.trycloudflare.com/api/login",
+                    "https://edgeguard-backend-g9l1.onrender.com/api/login",
                     {
                         method: "POST",
 
