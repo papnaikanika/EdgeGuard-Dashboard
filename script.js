@@ -1325,3 +1325,4 @@ async function controlDevice(device, command) {
         alert("Unable to control device");
     }
 }
+// Render backend connected
