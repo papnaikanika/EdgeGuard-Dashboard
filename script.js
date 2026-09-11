@@ -4,15 +4,6 @@
 
 const API_URL = "https://edgeguard-backend-g9l1.onrender.com";
 
-const AUTH_TOKEN =
-    sessionStorage.getItem("edgeguard_token");
-
-const AUTH_HEADERS = AUTH_TOKEN
-    ? {
-        "Authorization": `Bearer ${AUTH_TOKEN}`
-    }
-    : {};
-
 
 // ==========================================
 // CURRENT CHART
@@ -93,10 +84,7 @@ async function fetchSensorData() {
 
         const response =
             await fetch(
-                `${API_URL}/api/devices`,
-                {
-                    headers: AUTH_HEADERS
-                }
+                `${API_URL}/api/devices`
             );
 
         if (!response.ok) {
@@ -495,10 +483,7 @@ async function fetchAlerts() {
 
         const response =
             await fetch(
-                `${API_URL}/api/alerts`,
-                {
-                    headers: AUTH_HEADERS
-                }
+                `${API_URL}/api/alerts`
             );
 
         if (!response.ok) {
@@ -512,17 +497,11 @@ async function fetchAlerts() {
         const alerts =
             await response.json();
 
-        // --------------------------------------
-        // CHECK FOR NEW ALERT
-        // --------------------------------------
-
         if (alerts && alerts.length > 0) {
 
             const newestAlert =
                 alerts[0];
 
-            // First load: remember the latest
-            // alert but don't notify for old alerts
             if (lastAlertId === null) {
 
                 lastAlertId =
@@ -530,7 +509,6 @@ async function fetchAlerts() {
 
             }
 
-            // New alert detected
             else if (
                 newestAlert.id >
                 lastAlertId
@@ -562,6 +540,7 @@ async function fetchAlerts() {
 
 }
 
+
 // ==========================================
 // BROWSER ALERT NOTIFICATION
 // ==========================================
@@ -573,10 +552,6 @@ function showAlertNotification(alert) {
 
     const message =
         `Device ${alert.device_id}: ${alert.message}`;
-
-    // --------------------------------------
-    // Browser notification
-    // --------------------------------------
 
     if (
         "Notification" in window
@@ -623,10 +598,6 @@ function showAlertNotification(alert) {
         }
 
     }
-
-    // --------------------------------------
-    // Also show dashboard popup
-    // --------------------------------------
 
     const popup =
         document.createElement(
@@ -814,8 +785,7 @@ async function resolveAlert(
             await fetch(
                 `${API_URL}/api/alerts/${alertId}/resolve`,
                 {
-                    method: "PATCH",
-                    headers: AUTH_HEADERS
+                    method: "PATCH"
                 }
             );
 
@@ -828,8 +798,6 @@ async function resolveAlert(
         }
 
         fetchAlerts();
-
-        fetchAuditLogs();
 
     }
 
@@ -858,13 +826,6 @@ function formatAlertTime(
         return "";
 
     }
-
-    /*
-     * SQLite timestamp is already treated
-     * as local IST time.
-     *
-     * DO NOT add "Z" here.
-     */
 
     const date =
         new Date(
@@ -911,10 +872,7 @@ async function fetchHistory() {
 
         const response =
             await fetch(
-                `${API_URL}/api/history`,
-                {
-                    headers: AUTH_HEADERS
-                }
+                `${API_URL}/api/history`
             );
 
         if (!response.ok) {
@@ -1060,10 +1018,7 @@ async function fetchAuditLogs() {
 
         const response =
             await fetch(
-                `${API_URL}/api/audit-logs`,
-                {
-                    headers: AUTH_HEADERS
-                }
+                `${API_URL}/api/audit-logs`
             );
 
         if (!response.ok) {
@@ -1198,6 +1153,70 @@ document.addEventListener(
 
 
 // ==========================================
+// DEVICE CONTROL
+// ==========================================
+
+async function controlDevice(
+    device,
+    command
+) {
+
+    try {
+
+        const response =
+            await fetch(
+                `${API_URL}/api/control/${device}`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        command: command
+                    })
+                }
+            );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+
+            alert(
+                data.error ||
+                "Control failed"
+            );
+
+            return;
+
+        }
+
+        console.log(
+            `Device control: ${device} -> ${command}`
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Device control error:",
+            error
+        );
+
+        alert(
+            "Unable to control device"
+        );
+
+    }
+
+}
+
+
+// ==========================================
 // INITIAL LOAD
 // ==========================================
 
@@ -1226,103 +1245,4 @@ setInterval(
     fetchHistory,
     5000
 );
-// ==========================================
-// ==========================================
-// ROLE-BASED AUDIT LOG
-// ==========================================
-
-function setupRoleBasedUI() {
-
-    const auditSection =
-        document.getElementById("auditLogSection");
-
-    if (!auditSection) {
-        return;
-    }
-
-    const userData =
-        sessionStorage.getItem("edgeguard_user");
-
-    if (!userData) {
-        return;
-    }
-
-    try {
-
-        const user =
-            JSON.parse(userData);
-
-        console.log("Logged-in user:", user);
-
-        if (user.role === "ADMIN") {
-
-            auditSection.style.display = "";
-
-            fetchAuditLogs();
-
-        } else {
-
-            auditSection.style.display = "none";
-
-        }
-
-    } catch (error) {
-
-        console.error(
-            "Role check failed:",
-            error
-        );
-
-        auditSection.style.display = "none";
-    }
-}
-
-setupRoleBasedUI();
-// ==========================================
-// AUTO REFRESH ALERTS
-// ==========================================
-
-setInterval(
-    fetchAlerts,
-    3000
-);
-async function controlDevice(device, command) {
-
-    try {
-
-        const response = await fetch(
-            `${API_URL}/api/control/${device}`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    ...AUTH_HEADERS
-                },
-                body: JSON.stringify({
-                    command: command
-                })
-            }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            alert(data.error || "Control failed");
-            return;
-        }
-
-        console.log(
-            `Device control: ${device} -> ${command}`
-        );
-
-    } catch (error) {
-
-        console.error(
-            "Device control error:",
-            error
-        );
-
-        alert("Unable to control device");
-    }
-}
-// Render backend connected
+                 
