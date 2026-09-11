@@ -2,7 +2,7 @@
 // EdgeGuard-μGrid Dashboard
 // ==========================================
 
-const API_URL ="https://tide-vocals-words-jun.trycloudflare.com/api/login"
+const API_URL = "https://edgeguard-backend-g9l1.onrender.com";
 
 const AUTH_TOKEN =
     sessionStorage.getItem("edgeguard_token");
