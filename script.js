@@ -2,9 +2,7 @@
 // EdgeGuard-μGrid Dashboard
 // ==========================================
 
-const API_URL = "https://edgeguard-backend-g9l1.onrender.com";
-
-
+const API_URL = "http://192.168.137.148:3000";
 // ==========================================
 // CURRENT CHART
 // ==========================================
