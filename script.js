@@ -77,39 +77,33 @@ if (chartCanvas) {
 // ==========================================
 // FETCH SENSOR DATA
 // ==========================================
-
 async function fetchSensorData() {
 
     try {
 
         const response =
             await fetch(
-                `${API_URL}/api/devices`
+                `${API_URL}/api/devices`,
+                {
+                    headers: AUTH_HEADERS
+                }
             );
 
         if (!response.ok) {
-
             throw new Error(
-                "Backend response error"
+                `Backend response: ${response.status}`
             );
-
         }
 
         const data =
             await response.json();
 
         updateDashboard(data);
-
         updateLastUpdate();
 
         const systemStatus =
             document.getElementById(
                 "systemStatus"
-            );
-
-        const mqttStatus =
-            document.getElementById(
-                "mqttStatus"
             );
 
         if (systemStatus) {
@@ -119,21 +113,54 @@ async function fetchSensorData() {
 
         }
 
-        if (mqttStatus) {
-
-            mqttStatus.textContent =
-                "CONNECTED";
-
-        }
-
     }
-
     catch (error) {
 
         console.error(
-            "Unable to connect to backend:",
+            "Unable to load sensor data:",
             error
         );
+
+        const systemStatus =
+            document.getElementById(
+                "systemStatus"
+            );
+
+        if (systemStatus) {
+
+            systemStatus.textContent =
+                "BACKEND OFFLINE";
+
+        }
+
+        // IMPORTANT:
+        // Do NOT change MQTT status here.
+        // A temporary API failure does not mean
+        // MQTT is disconnected.
+
+    }
+
+}
+async function checkSystemStatus() {
+
+    try {
+
+        const response =
+            await fetch(
+                `${API_URL}/api/status`,
+                {
+                    headers: AUTH_HEADERS
+                }
+            );
+
+        if (!response.ok) {
+            throw new Error(
+                `Status API: ${response.status}`
+            );
+        }
+
+        const status =
+            await response.json();
 
         const systemStatus =
             document.getElementById(
@@ -148,22 +175,42 @@ async function fetchSensorData() {
         if (systemStatus) {
 
             systemStatus.textContent =
-                "BACKEND OFFLINE";
+                status.backend === "ONLINE"
+                    ? "SYSTEM ONLINE"
+                    : "BACKEND OFFLINE";
 
         }
 
         if (mqttStatus) {
 
             mqttStatus.textContent =
-                "DISCONNECTED";
+                status.mqtt === "CONNECTED"
+                    ? "CONNECTED"
+                    : "DISCONNECTED";
 
+        }
+
+    }
+    catch (error) {
+
+        console.error(
+            "Unable to check system status:",
+            error
+        );
+
+        const systemStatus =
+            document.getElementById(
+                "systemStatus"
+            );
+
+        if (systemStatus) {
+            systemStatus.textContent =
+                "BACKEND OFFLINE";
         }
 
     }
 
 }
-
-
 // ==========================================
 // UPDATE DASHBOARD
 // ==========================================
@@ -1224,7 +1271,7 @@ fetchSensorData();
 fetchAlerts();
 
 fetchHistory();
-
+checkSystemStatus();
 
 // ==========================================
 // AUTO REFRESH
@@ -1232,16 +1279,20 @@ fetchHistory();
 
 setInterval(
     fetchSensorData,
-    2000
+    5000
 );
 
 setInterval(
     fetchAlerts,
-    3000
+    10000
 );
 
 setInterval(
     fetchHistory,
+    15000
+);
+
+setInterval(
+    checkSystemStatus,
     5000
 );
-                 
